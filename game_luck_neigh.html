@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>오늘의 게이머 운세 지수</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+    
+    :root {
+      --bg-color: #030308;
+      --accent-purple: #a855f7;
+      --text-main: #ffffff;
+      --text-dim: rgba(255, 255, 255, 0.5);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { 
+      background-color: var(--bg-color); 
+      font-family: 'Noto Sans KR', sans-serif; 
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding-bottom: 50px;
+    }
+
+    .top-nav {
+      width: 100%; background: rgba(168, 85, 247, 0.1); padding: 12px;
+      text-align: center; border-bottom: 1px solid rgba(168, 85, 247, 0.2); margin-bottom: 30px;
+    }
+    .top-nav a { color: var(--accent-purple); text-decoration: none; font-size: 14px; font-weight: 700; }
+
+    /* 화면 컨테이너 */
+    .container { width: 100%; max-width: 450px; position: relative; min-height: 600px; display: flex; align-items: center; justify-content: center; }
+
+    /* 초기/로딩 화면 */
+    #welcome-screen {
+      width: 100%; text-align: center; padding: 40px;
+      background: rgba(255,255,255,0.02); border-radius: 30px; border: 1px dashed rgba(255,255,255,0.1);
+    }
+
+    /* 결과 출력 영역 */
+    #capture-area {
+      display: none; width: 100%; background: #0f111a; border-radius: 30px; padding: 40px 30px;
+      position: relative; overflow: hidden; box-shadow: 0 0 40px rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    /* 결과 등장 애니메이션 */
+    .appear-effect { animation: resultShow 0.8s cubic-bezier(0.17, 0.67, 0.83, 0.67); }
+    @keyframes resultShow {
+      0% { opacity: 0; transform: scale(0.9); filter: brightness(3); }
+      100% { opacity: 1; transform: scale(1); filter: brightness(1); }
+    }
+
+    .header .date { font-size: 12px; color: var(--accent-purple); letter-spacing: 3px; margin-bottom: 8px; text-align: center;}
+    .header h1 { font-size: 22px; text-align: center; margin-bottom: 30px; }
+
+    .score-circle {
+      width: 180px; height: 180px; margin: 0 auto 25px;
+      border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: radial-gradient(circle, rgba(168, 85, 247, 0.1) 0%, transparent 70%);
+      border: 2px solid rgba(168, 85, 247, 0.3);
+    }
+    .main-score { font-size: 70px; font-weight: 700; line-height: 1; margin-bottom: 5px; }
+    .score-label { font-size: 12px; color: var(--text-dim); }
+
+    .grade-box { text-align: center; margin-bottom: 30px; }
+    .grade-title { font-size: 26px; font-weight: 700; margin-bottom: 8px; }
+    .grade-desc { font-size: 14px; color: var(--text-dim); line-height: 1.5; }
+
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+    .stat-item { background: rgba(255,255,255,0.03); padding: 15px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); }
+    .stat-name { font-size: 11px; color: var(--text-dim); margin-bottom: 10px; }
+    .stat-row { display: flex; justify-content: space-between; align-items: baseline; }
+    .stat-num { font-size: 20px; font-weight: 700; }
+    .stat-tag { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.1); }
+
+    .advice-box {
+      background: rgba(168, 85, 247, 0.05); border-radius: 20px; padding: 20px; margin-bottom: 25px;
+      border-left: 4px solid var(--accent-purple);
+    }
+    .advice-label { font-size: 10px; color: var(--accent-purple); font-weight: 700; margin-bottom: 8px; }
+    .advice-text { font-size: 14px; line-height: 1.6; }
+
+    .watermark { text-align: center; font-size: 11px; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px; }
+
+    /* 버튼 섹션 */
+    .btn-group { width: 100%; max-width: 450px; display: none; gap: 10px; margin-top: 20px; }
+    .btn { flex: 1; padding: 18px; border-radius: 20px; border: none; font-weight: 700; cursor: pointer; font-family: inherit; transition: 0.2s; }
+    .btn-main { background: var(--accent-purple); color: white; width: 220px; font-size: 18px; margin: 0 auto; box-shadow: 0 10px 25px rgba(168, 85, 247, 0.4); }
+    .btn-refresh { background: #1a1c26; color: white; border: 1px solid rgba(255,255,255,0.1); }
+    .btn-save { background: var(--accent-purple); color: white; }
+    .btn:active { transform: scale(0.95); }
+
+    /* 로딩 스피너 */
+    #loading-screen { display: none; text-align: center; }
+    .spinner { border: 4px solid rgba(168, 85, 247, 0.1); border-top: 4px solid var(--accent-purple); border-radius: 50%; width: 50px; height: 50px; animation: spin 0.8s linear infinite; margin: 0 auto 15px; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    /* 특수 효과 */
+    .shake-red { animation: shake 0.3s infinite; border: 1px solid #ff4444 !important; }
+    @keyframes shake { 0% { transform: translate(1px, 1px); } 50% { transform: translate(-2px, -1px); } 100% { transform: translate(1px, 1px); } }
+  </style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <a href="https://blog.naver.com/seoshlego" target="_blank">🔗 네이의 게임생활 블로그 바로가기</a>
+</nav>
+
+<div class="container">
+  <div id="welcome-screen">
+    <div style="font-size: 20px; color: var(--text-dim); margin-bottom: 30px; line-height: 1.6;">당신의 오늘 하루 운명,<br>시스템에 접속하여 확인하세요.</div>
+    <button class="btn btn-main" onclick="startSequence()">운세 분석 시작</button>
+  </div>
+
+  <div id="loading-screen">
+    <div class="spinner"></div>
+    <div style="color: var(--accent-purple); font-weight: 700; letter-spacing: 1px;">데이터 분석 및 운명 동기화 중...</div>
+  </div>
+
+  <div id="capture-area">
+    <div class="header">
+      <div class="date" id="date-display"></div>
+      <h1>오늘의 게이머 운세 지수</h1>
+    </div>
+
+    <div class="score-circle">
+      <div class="main-score" id="total-score">0</div>
+      <div class="score-label">포인트</div>
+    </div>
+
+    <div class="grade-box">
+      <div class="grade-title" id="grade-name">-</div>
+      <div class="grade-desc" id="grade-desc">-</div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-item"><div class="stat-name">🎰 뽑기운</div><div class="stat-row"><div class="stat-num" id="s-gacha">0</div><div class="stat-tag" id="t-gacha">-</div></div></div>
+      <div class="stat-item"><div class="stat-name">💀 드랍운</div><div class="stat-row"><div class="stat-num" id="s-drop">0</div><div class="stat-tag" id="t-drop">-</div></div></div>
+      <div class="stat-item"><div class="stat-name">🗡️ 강화운</div><div class="stat-row"><div class="stat-num" id="s-craft">0</div><div class="stat-tag" id="t-craft">-</div></div></div>
+      <div class="stat-item"><div class="stat-name">🤝 팀원운</div><div class="stat-row"><div class="stat-num" id="s-team">0</div><div class="stat-tag" id="t-team">-</div></div></div>
+    </div>
+
+    <div class="advice-box">
+      <div class="advice-label">오늘의 조언</div>
+      <div class="advice-text" id="advice-text">-</div>
+    </div>
+
+    <div class="watermark">
+      제작: <b>네이의 게임생활</b><br>
+      https://blog.naver.com/seoshlego
+    </div>
+  </div>
+</div>
+
+<div class="btn-group" id="btn-group">
+  <button class="btn btn-refresh" onclick="startSequence()">다시 뽑기</button>
+  <button class="btn btn-save" onclick="saveImage()">이미지로 저장</button>
+</div>
+
+<script>
+  const GRADES = [
+    { name: "👑 전설의 날", desc: "이건 버그 수준입니다. 지금 바로 접속하세요!", color: "#facc15", msg: "확률의 신이 당신과 함께합니다. 망설이던 유료 결제나 강화, 오늘이 바로 그날입니다." },
+    { name: "✨ 축복받은 날", desc: "세상 모든 확률이 당신 편으로 기울었습니다.", color: "#c084fc", msg: "운이 아주 좋습니다. 평소보다 드랍률이 높은 느낌을 받을 거예요. 가벼운 마음으로 도전하세요." },
+    { name: "🍀 소소한 행운", desc: "나쁘지 않은 하루입니다. 평타 이상은 칩니다.", color: "#4ade80", msg: "무난하게 성장하는 날입니다. 큰 욕심만 부리지 않는다면 기분 좋게 로그아웃할 수 있습니다." },
+    { name: "😐 평범한 일상", desc: "운보다는 실력으로 승부해야 하는 날입니다.", color: "#60a5fa", msg: "특별할 것 없는 하루입니다. 강화보다는 일일 퀘스트나 내실 다지기에 집중해보세요." },
+    { name: "⚠️ 주의가 필요함", desc: "오늘은 확률형 콘텐츠를 피하는 게 상책입니다.", color: "#fb923c", msg: "기운이 좋지 않습니다. 강화석을 아끼세요. 오늘 날려먹으면 복구하는 데 한참 걸립니다." },
+    { name: "🚫 접속 금지령", desc: "컴퓨터를 끄고 맛있는 걸 먹으며 휴식하세요.", color: "#f87171", msg: "최악의 기운입니다. 오늘 게임하면 스트레스만 받습니다. 내일의 나를 위해 참으세요." }
+  ];
+
+  function getBiasedValue() {
+    let r = Math.random();
+    let biased = r < 0.5 ? Math.pow(r * 2, 3.2) / 2 : 1 - (Math.pow((1 - r) * 2, 3.2) / 2);
+    return Math.floor(biased * 100);
+  }
+
+  function startSequence() {
+    // 모든 화면 초기화
+    document.getElementById('welcome-screen').style.display = 'none';
+    document.getElementById('capture-area').style.display = 'none';
+    document.getElementById('btn-group').style.display = 'none';
+    document.getElementById('capture-area').classList.remove('appear-effect', 'shake-red');
+    
+    // 로딩 표시
+    document.getElementById('loading-screen').style.display = 'block';
+
+    setTimeout(() => {
+      document.getElementById('loading-screen').style.display = 'none';
+      const area = document.getElementById('capture-area');
+      area.style.display = 'block';
+      area.classList.add('appear-effect'); // 등장 연출
+      document.getElementById('btn-group').style.display = 'flex';
+      updateLuck();
+    }, 1200);
+  }
+
+  function updateLuck() {
+    const now = new Date();
+    document.getElementById('date-display').textContent = now.getFullYear() + "." + (now.getMonth() + 1).toString().padStart(2, '0') + "." + now.getDate().toString().padStart(2, '0');
+
+    const gacha = getBiasedValue();
+    const drop = getBiasedValue();
+    const craft = getBiasedValue();
+    const team = getBiasedValue();
+    let avg = (gacha + drop + craft + team) / 4;
+    let total = Math.round(avg > 50 ? Math.min(100, avg + (avg - 50) * 0.5) : Math.max(0, avg - (50 - avg) * 0.5));
+
+    document.getElementById('total-score').textContent = total;
+    setStat('gacha', gacha); setStat('drop', drop); setStat('craft', craft); setStat('team', team);
+
+    let idx = total >= 88 ? 0 : total >= 70 ? 1 : total >= 50 ? 2 : total >= 35 ? 3 : total >= 18 ? 4 : 5;
+    const grade = GRADES[idx];
+    
+    document.getElementById('grade-name').textContent = grade.name;
+    document.getElementById('grade-name').style.color = grade.color;
+    document.getElementById('grade-desc').textContent = grade.desc;
+    document.getElementById('advice-text').textContent = grade.msg;
+    document.querySelector('.score-circle').style.borderColor = grade.color;
+
+    // 이펙트 실행
+    if (total >= 88) {
+      // 잭팟: 금색 가루
+      const duration = 2 * 1000;
+      const end = Date.now() + duration;
+      (function frame() {
+        confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#facc15', '#ffffff'] });
+        confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#facc15', '#ffffff'] });
+        if (Date.now() < end) requestAnimationFrame(frame);
+      }());
+    } else if (total >= 70) {
+      // 축복: 보라/핑크 가루
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#a855f7', '#f472b6'] });
+    } else if (total <= 18) {
+      // 저주: 화면 흔들림
+      document.getElementById('capture-area').classList.add('shake-red');
+    }
+  }
+
+  function setStat(id, val) {
+    document.getElementById('s-' + id).textContent = val;
+    let tag = val >= 75 ? "최상" : val >= 45 ? "보통" : "위험";
+    document.getElementById('t-' + id).textContent = tag;
+  }
+
+  async function saveImage() {
+    const area = document.getElementById('capture-area');
+    const canvas = await html2canvas(area, { backgroundColor: '#0f111a', scale: 2 });
+    const link = document.createElement('a');
+    link.download = `네이의_게임운세_${new Date().getTime()}.png`;
+    link.href = canvas.toDataURL();
+    link.click();
+  }
+</script>
+
+</body>
+</html>
