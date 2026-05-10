@@ -28,13 +28,13 @@
       padding-bottom: 50px;
     }
 
+    /* 상단 블로그 바로가기 */
     .top-nav {
       width: 100%; background: rgba(168, 85, 247, 0.1); padding: 12px;
       text-align: center; border-bottom: 1px solid rgba(168, 85, 247, 0.2); margin-bottom: 30px;
     }
     .top-nav a { color: var(--accent-purple); text-decoration: none; font-size: 14px; font-weight: 700; }
 
-    /* 화면 컨테이너 */
     .container { width: 100%; max-width: 450px; position: relative; min-height: 600px; display: flex; align-items: center; justify-content: center; }
 
     /* 초기/로딩 화면 */
@@ -43,7 +43,7 @@
       background: rgba(255,255,255,0.02); border-radius: 30px; border: 1px dashed rgba(255,255,255,0.1);
     }
 
-    /* 결과 출력 영역 */
+    /* 결과창 디자인 */
     #capture-area {
       display: none; width: 100%; background: #0f111a; border-radius: 30px; padding: 40px 30px;
       position: relative; overflow: hidden; box-shadow: 0 0 40px rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.05);
@@ -86,9 +86,10 @@
     .advice-label { font-size: 10px; color: var(--accent-purple); font-weight: 700; margin-bottom: 8px; }
     .advice-text { font-size: 14px; line-height: 1.6; }
 
+    /* 워터마크 */
     .watermark { text-align: center; font-size: 11px; color: rgba(255,255,255,0.2); border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px; }
 
-    /* 버튼 섹션 */
+    /* 버튼 스타일 */
     .btn-group { width: 100%; max-width: 450px; display: none; gap: 10px; margin-top: 20px; }
     .btn { flex: 1; padding: 18px; border-radius: 20px; border: none; font-weight: 700; cursor: pointer; font-family: inherit; transition: 0.2s; }
     .btn-main { background: var(--accent-purple); color: white; width: 220px; font-size: 18px; margin: 0 auto; box-shadow: 0 10px 25px rgba(168, 85, 247, 0.4); }
@@ -96,12 +97,12 @@
     .btn-save { background: var(--accent-purple); color: white; }
     .btn:active { transform: scale(0.95); }
 
-    /* 로딩 스피너 */
+    /* 로딩 애니메이션 */
     #loading-screen { display: none; text-align: center; }
     .spinner { border: 4px solid rgba(168, 85, 247, 0.1); border-top: 4px solid var(--accent-purple); border-radius: 50%; width: 50px; height: 50px; animation: spin 0.8s linear infinite; margin: 0 auto 15px; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-    /* 특수 효과 */
+    /* 저주 받은 날 효과 */
     .shake-red { animation: shake 0.3s infinite; border: 1px solid #ff4444 !important; }
     @keyframes shake { 0% { transform: translate(1px, 1px); } 50% { transform: translate(-2px, -1px); } 100% { transform: translate(1px, 1px); } }
   </style>
@@ -114,13 +115,13 @@
 
 <div class="container">
   <div id="welcome-screen">
-    <div style="font-size: 20px; color: var(--text-dim); margin-bottom: 30px; line-height: 1.6;">당신의 오늘 하루 운명,<br>시스템에 접속하여 확인하세요.</div>
-    <button class="btn btn-main" onclick="startSequence()">운세 분석 시작</button>
+    <div style="font-size: 20px; color: var(--text-dim); margin-bottom: 30px; line-height: 1.6;">오늘의 행운을<br>분석할 준비가 되셨나요?</div>
+    <button class="btn btn-main" onclick="startSequence()">운세 확인하기</button>
   </div>
 
   <div id="loading-screen">
     <div class="spinner"></div>
-    <div style="color: var(--accent-purple); font-weight: 700; letter-spacing: 1px;">데이터 분석 및 운명 동기화 중...</div>
+    <div style="color: var(--accent-purple); font-weight: 700;">운명 시스템 동기화 중...</div>
   </div>
 
   <div id="capture-area">
@@ -173,6 +174,7 @@
     { name: "🚫 접속 금지령", desc: "컴퓨터를 끄고 맛있는 걸 먹으며 휴식하세요.", color: "#f87171", msg: "최악의 기운입니다. 오늘 게임하면 스트레스만 받습니다. 내일의 나를 위해 참으세요." }
   ];
 
+  // 확률 편향 알고리즘 (양 끝값 유도)
   function getBiasedValue() {
     let r = Math.random();
     let biased = r < 0.5 ? Math.pow(r * 2, 3.2) / 2 : 1 - (Math.pow((1 - r) * 2, 3.2) / 2);
@@ -180,20 +182,18 @@
   }
 
   function startSequence() {
-    // 모든 화면 초기화
+    // 모든 화면 초기화 및 로딩 시작
     document.getElementById('welcome-screen').style.display = 'none';
     document.getElementById('capture-area').style.display = 'none';
     document.getElementById('btn-group').style.display = 'none';
     document.getElementById('capture-area').classList.remove('appear-effect', 'shake-red');
-    
-    // 로딩 표시
     document.getElementById('loading-screen').style.display = 'block';
 
     setTimeout(() => {
       document.getElementById('loading-screen').style.display = 'none';
       const area = document.getElementById('capture-area');
       area.style.display = 'block';
-      area.classList.add('appear-effect'); // 등장 연출
+      area.classList.add('appear-effect');
       document.getElementById('btn-group').style.display = 'flex';
       updateLuck();
     }, 1200);
@@ -224,7 +224,7 @@
 
     // 이펙트 실행
     if (total >= 88) {
-      // 잭팟: 금색 가루
+      // 전설급: 화려한 폭죽
       const duration = 2 * 1000;
       const end = Date.now() + duration;
       (function frame() {
@@ -233,10 +233,10 @@
         if (Date.now() < end) requestAnimationFrame(frame);
       }());
     } else if (total >= 70) {
-      // 축복: 보라/핑크 가루
+      // 축복급: 보라색 폭죽
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#a855f7', '#f472b6'] });
     } else if (total <= 18) {
-      // 저주: 화면 흔들림
+      // 저주급: 화면 흔들림
       document.getElementById('capture-area').classList.add('shake-red');
     }
   }
@@ -251,7 +251,7 @@
     const area = document.getElementById('capture-area');
     const canvas = await html2canvas(area, { backgroundColor: '#0f111a', scale: 2 });
     const link = document.createElement('a');
-    link.download = `네이의_게임운세_${new Date().getTime()}.png`;
+    link.download = `네이의_게임운세_${new Date().toISOString().slice(0,10)}.png`;
     link.href = canvas.toDataURL();
     link.click();
   }
